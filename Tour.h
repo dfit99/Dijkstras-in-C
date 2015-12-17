@@ -24,24 +24,33 @@ void Tour () {
 		makeTree(&heap, &graph, nextNode);
 	    nextNode = extractMin(&heap);
 	}
-	print_heap(&heap);
 	traverseTree(startNode);
 }
 
-void traverseTree(Node *node){
+void traverseTree(Node *node, Graph *graph){
 	int i;
 	printf("here1");
 	int size = node->childSize;
-		printf("size: %d", size);
 	for (i=0; i<=size; i++){
 		PrintLeg(node->children[i]->prev);
-		printf("\n %d \n", node->v);
-		traverseTree((node->children[i]));
-		printf("\n %d \n", node->v);
-		PrintLeg((node->children[i]->prev));
+		traverseTree((node->children[i]), graph);
+		int backEdge = getBackEdge(graph, node->children[i]->v, node->v); //get backEdge to print after recursing back up
+		PrintLeg(backEdge);
 	}
-	printf("here3");
 	return;
+}
+
+int getBackEdge(Graph *graph, int front, int back){
+	adjListNode *current = graph->array[front]->Head; 
+	while(current->edge!= -1){
+		int currentEdge = current->edge;
+		int neighborVertex = Eend[currentEdge];
+		if (neighborVertex == back){
+			return currentEdge;
+		}
+		current = current->Next;
+	}
+	return -1;
 }
 void makeTree(Heap *heap, Graph *graph, Node* currentNode){
 	int v = currentNode->v;
