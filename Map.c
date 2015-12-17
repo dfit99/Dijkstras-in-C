@@ -1,4 +1,4 @@
-/*NAME AND DATE GOES HERE.*/
+/*Daniel Fiterman 12/12/15.*/
 /*Brandeis Map*/
 
 /*Standard system stuff - these are the ONLY ones that may be used.*/
@@ -48,23 +48,22 @@ typedef struct Graph {
 adjList* array [MaxVertex];
 } Graph;
 
+//Initializes the values in a Graph
 Graph  init_graph() {
 	int i;
-	int j;
-	//GetEdges();
-	//GetVertices();
-
 	static Graph graph; 
-
-	//initialize all list for all V
-	adjListNode *SENTINEL_VALUE = malloc(sizeof(adjListNode));
+	
+	
+	adjListNode *SENTINEL_VALUE = malloc(sizeof(adjListNode)); //A null pointer replacement
 	SENTINEL_VALUE->edge = -1;
-	for (i=0; i<MaxVertex-1;i++){
+	
+	for (i=0; i<MaxVertex-1;i++){ //Initialize a list for each vertex
 		adjList *list = malloc(sizeof(adjList));
 		list->Head = SENTINEL_VALUE;
 		graph.array[i] = list;
 	}
 	
+	//Fill up list, creating adjacency graph
 	for (i=20; i<=595; i++){
 		int startVertex = Estart[i];
 		if(startVertex == 0){
@@ -79,6 +78,7 @@ Graph  init_graph() {
 	return graph;
 };
 
+//print what's in a graph
 void print_graph(Graph *graph){
 	int i = 0;
 	for (i=MinVertex; i<MaxVertex-1; i++){
@@ -98,7 +98,7 @@ void print_graph(Graph *graph){
 /***************************************************************************************/
 int size; 
 
-
+//Node object storing all the information we need about a Node and its corresponding vertex
 typedef struct Node {
 	int v;
 	int dist;
@@ -109,35 +109,34 @@ typedef struct Node {
 	int childSize;
 } Node;
 
+//Heap data structure, composed of Nodes
 typedef struct Heap {
 	Node *data[MaxVertex+1];
 	Node *pos[MaxVertex];
 	int size;
 } Heap;
 
-
+//swap utility function
 void swap (Node **a,  Node **b){
 	Node *temp = *a;
 	*a = *b;
 	*b = temp;
-
 }
 
 #define data heap->data
 
-
-percolate_up(Heap *heap, int i){
-
+//Iteratively swaps a node up the Heap until it is smaller than its parent
+void percolate_up(Heap *heap, int i){
 	while(i>1 && data[i]->dist < data[i/2]->dist){
 		data[i]->pos = i/2;
 		data[i/2]->pos = i;
 		swap(&data[i], &data[i/2]);
-		
 		i = i/2;
 	}
 }
 
-percolate_down(Heap *heap, int i){
+// Iteratively swaps a node down the Heap until it is smaller than its children
+void percolate_down(Heap *heap, int i){
 	size = heap->size;
 	while(i<= size){
 		int k =i ;
@@ -146,7 +145,7 @@ percolate_down(Heap *heap, int i){
 		if(i*2 <= size){
 			Node **left_child = &data[i*2];
 			Node *left__child = data[i*2];
-			if (left__child->dist < _min->dist){
+			if (left__child->dist < _min->dist){ //compare with left child
 				_min = left__child;	
 				min =  left_child;
 				k = i*2;
@@ -156,7 +155,7 @@ percolate_down(Heap *heap, int i){
 		if(i*2 + 1 <= size ){
 			Node **right_child = &data[i*2 + 1];
 			Node *right__child = data[i*2 + 1];
-			if (right__child->dist < _min->dist){
+			if (right__child->dist < _min->dist){ //compare with right child
 				_min = right__child;
 				min = right_child;
 				k = i*2 +1;
@@ -166,17 +165,15 @@ percolate_down(Heap *heap, int i){
 			break;
 		}
 		
+		// change inner positional pointers accordingly
 		_min->pos = i;
 		data[i]->pos =k ;
-		
 		swap(min, &data[i]);
-	   
-		
 		i = k;
-		
 	}
 }
 
+//pops the minimum value in the heap
 Node *extractMin(Heap *heap){
 		Node *min = data[1];
 		swap(&data[1], &data[heap->size]);
@@ -187,6 +184,7 @@ Node *extractMin(Heap *heap){
 		return min;
 }
 
+//Decreases the value of a node in the Heap
 void decreaseKey(Heap *heap, int v, int dist){
 	Node *node = heap->pos[v]; 
 	node->dist = dist;
@@ -205,11 +203,12 @@ Node *add_node (int v, int pos, int dist){
 }
 
 
+//Initializes the Heap, returns the heap
 Heap init_Heap (){
 	static  Heap _heap;
 	Heap *heap = &_heap;
 	int i;
-	for(i=0; i< MaxVertex; i++){ //ith vertex will initially be put in the i + 1th position in the heap
+	for(i=0; i< MaxVertex; i++){ //ith vertex will initially be put in the i + 1th position in the heap because we index the heap at 1
 		Node *node = add_node(i, i+1, InfiniteCost);
 		data[i+1] = node;
 		heap->pos[i] = node;
@@ -219,29 +218,19 @@ Heap init_Heap (){
 	return _heap;
 };
 
-Heap test_Heap(){
-	static Heap test_heap;
-	static  Heap *heap = &test_heap;
-	int i;
-	for(i=0; i<12; i++){ //ith vertex will initially be put in the i + 1th position in the heap
-		Node *node = add_node(i, i+1, i);
-		data[i+1] = node;
-		heap->pos[i] = node;
-	}
-	
-	heap->size = 12;
-	return test_heap;
-}
-
+//Called by Dijkstra. For each iteration of Dijkstra's, it updates the minimum distance of adjacent nodes
 void decreaseKeys(Heap *heap, Graph *graph, Node *currentNode){
     int v = currentNode->v;
 	adjListNode *current = graph->array[v]->Head; 
+	
 	while(current->edge!= -1){
 		int currentEdge = current->edge;
 		int edgeLength = EdgeCost(currentEdge);
 		int neighborVertex = Eend[currentEdge];
+		int newDistance;
+		
 		Node *neighborNode =  heap->pos[neighborVertex];
-		int newDistance = edgeLength + (currentNode->dist);
+		newDistance = edgeLength + (currentNode->dist);
 		if (newDistance <= (neighborNode->dist)){
 			decreaseKey(heap, neighborVertex, newDistance);
 			neighborNode->prev = currentEdge;
@@ -249,9 +238,9 @@ void decreaseKeys(Heap *heap, Graph *graph, Node *currentNode){
 		}
 		current = current->Next;
 	}
-	
 }
 
+//prints the heap
 void print_heap(Heap *heap){
 	int i;
 	for (i=1; i<=heap->size; i++){
@@ -259,6 +248,7 @@ void print_heap(Heap *heap){
 	}
 }
 
+//Called by Dijkstra's. After popping end node, perform a backTrace, printing in reverse order
 void backTrace (Node *node){
 	Node *currentNode = node;
 	int size = 0;
@@ -276,13 +266,7 @@ void backTrace (Node *node){
 	for (i = size-1; i>=0; i--){
 		PrintLeg(edges[i]);
 	}
-	
-	
 }
-
-
-
-	
 
 
 /***************************************************************************************/
@@ -291,7 +275,6 @@ void backTrace (Node *node){
 /***************************************************************************************/
 
 void Dijkstra(int DijkstraFlag) {
-
 	Heap heap = init_Heap();
 	Graph graph = init_graph();
 	Node *nextNode;
@@ -307,13 +290,6 @@ void Dijkstra(int DijkstraFlag) {
 			backTrace(nextNode);
 		}
 	}
-	
-	
-	
-	
-	
-	
-	
 }
 
 
@@ -327,26 +303,8 @@ void Dijkstra(int DijkstraFlag) {
 /*MAIN PROGRAM (don't modify)                                                          */
 /***************************************************************************************/
 int main(int argc, char *argv[]) {
-
-int DEBUG = 0;
-if (argc > 1) {
-  DEBUG =  1;
-}
-
-if (DEBUG){
-	Heap heap = init_Heap();
-    Graph graph = init_graph();
-	print_graph(&graph);
-	print_heap(&heap);
-	
-	
-}
-
-
-else{ 
 	GetVertices();
 	GetEdges();
 	while (GetRequest()) {RouteOpen(); TourFlag ? Tour() : Dijkstra(0); RouteClose();}
 	return(0);
-}
 }
