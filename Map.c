@@ -105,6 +105,8 @@ typedef struct Node {
 	int pos;
 	int prev;
 	struct Node *prevNode;
+    struct Node *children[170];
+	int childSize;
 } Node;
 
 typedef struct Heap {
@@ -198,6 +200,7 @@ Node *add_node (int v, int pos, int dist){
 	node->pos = pos;
 	node->v = v;
 	node->prev = -1;
+	node->childSize = -1;
 	return node;
 }
 
@@ -288,18 +291,23 @@ void backTrace (Node *node){
 /***************************************************************************************/
 
 void Dijkstra(int DijkstraFlag) {
+
 	Heap heap = init_Heap();
 	Graph graph = init_graph();
 	Node *nextNode;
 	decreaseKey(&heap, Begin, 0);
 	nextNode = extractMin(&heap);
-	while (nextNode->dist != InfiniteCost &&  nextNode->v != Finish) {
-		decreaseKeys(&heap, &graph, nextNode);
-		nextNode = extractMin(&heap);
+	
+	if (!DijkstraFlag){
+		while (nextNode->dist != InfiniteCost &&  nextNode->v != Finish) {
+			decreaseKeys(&heap, &graph, nextNode);
+			nextNode = extractMin(&heap);
+		}
+		if (nextNode->dist != InfiniteCost){
+			backTrace(nextNode);
+		}
 	}
-	if (nextNode->dist != InfiniteCost){
-		backTrace(nextNode);
-	}
+	
 	
 	
 	
